@@ -1,5 +1,5 @@
 import { $, esc, api, store, rememberRound, forgetRound, toast, avatar, whenText, shareLink } from './common.js';
-import { analyse, analyseCounts, surprises } from './game.js';
+import { analyse, analyseCounts, surprises, shortNames } from './game.js';
 import { drawCard } from './card.js';
 
 const id = location.pathname.split('/')[2];
@@ -22,8 +22,13 @@ async function load() {
     state = await api('/rounds/' + id, { token });
   } catch (e) {
     $('#head').classList.add('hidden');
-    app.innerHTML = `<div class="panel center"><div class="seal">🫥</div><h2>Round not found</h2><p class="muted">${esc(e.message)}</p><a class="btn have" href="/#packs">Start a new round</a></div>`;
-    if (e.status === 404) forgetRound(id);
+    if (e.status === 404) {
+      forgetRound(id);
+      app.innerHTML = `<div class="panel center"><div class="seal">🫥</div><h2>Round not found</h2><p class="muted">${esc(e.message)}</p><a class="btn have" href="/#packs">Start a new round</a></div>`;
+    } else {
+      app.innerHTML = `<div class="panel center"><div class="seal">📡</div><h2>Couldn't load the round</h2><p class="muted">${esc(e.message)}</p><button class="btn have" id="retry-load">Try again</button></div>`;
+      $('#retry-load').onclick = () => { app.innerHTML = '<div class="panel center muted">Loading…</div>'; load(); };
+    }
     return;
   }
   if (token && !state.me) { store.del('t:' + id); token = null; }
@@ -39,9 +44,10 @@ function head() {
   $('#h-title').textContent = r.title;
   document.title = `${r.title} · Fess Up`;
   const by = r.creatorName ? `Started by ${esc(r.creatorName)}` : '';
+  const late = r.deadline <= state.now;
   $('#h-sub').innerHTML = r.revealed
     ? `${by} · revealed · ${done} played`
-    : `${by} · ${done} of ${r.size} answered · reveal ${esc(whenText(r.deadline, state.now))} at the latest`;
+    : `${by} · ${done} of ${r.size} answered · ${late ? 'reveals with the first answer' : `reveal by ${esc(whenText(r.deadline, state.now))}`}`;
 }
 
 function render() {
@@ -104,6 +110,14 @@ function renderPlay() {
     }));
     $('#back').onclick = () => { answers = answers.slice(0, -1); store.set('p:' + id, answers); draw(); };
   };
+  // Keyboard: H / N / P to answer, Backspace to go back.
+  document.onkeydown = (e) => {
+    if (!$('#play') || e.metaKey || e.ctrlKey || e.altKey) return;
+    const key = e.key.toLowerCase();
+    const map = { h: 'h', y: 'h', n: 'n', p: 'p' };
+    if (map[key]) { e.preventDefault(); app.querySelector(`[data-a="${map[key]}"]`).click(); }
+    else if (key === 'backspace' && answers.length) { e.preventDefault(); $('#back').click(); }
+  };
   const submit = async () => {
     app.innerHTML = `<div class="panel center"><div class="seal">✉️</div><h2>Sealing your answers…</h2></div>`;
     try {
@@ -141,10 +155,10 @@ function renderWait() {
       ${me.isCreator && m.id !== me.id ? `<button class="x" data-rm="${esc(m.id)}" aria-label="Remove ${esc(m.nickname)}">×</button>` : ''}</li>`).join('')}</ul>
       ${me.isCreator ? `<button class="btn secondary block" id="reveal"${done < 2 ? ' disabled' : ''}>Reveal now</button><p class="muted small center" style="margin:8px 0 0">${done < 2 ? 'You can reveal early once 2 people have answered.' : 'Only you can do this, because you started the round.'}</p>` : ''}
     </div>
-    <div class="btn-row center" style="justify-content:center">
+    <div class="actions">
       <button class="btn ghost" id="edit">Change my answers</button>
       <button class="btn ghost" id="mylink">Use on another device</button>
-      <button class="btn ghost" id="leave">${me.isCreator ? 'Delete round' : 'Leave round'}</button>
+      <button class="btn ghost" id="leave">${me.isCreator ? 'Delete the round' : 'Leave the round'}</button>
     </div>`;
   $('#share').onclick = () => shareLink({ title: r.title, text: inviteText(), url: roundUrl() });
   $('#edit').onclick = () => { editing = true; store.del('p:' + id); render(); };
@@ -240,7 +254,7 @@ function renderEnd() {
   app.innerHTML = `
     <div class="panel pop"><h2>${esc(r.title)}: the results</h2>
       <p class="muted">${result.n} played · as a group you have done ${result.groupPct}% of these.</p>
-      ${result.awards.length ? `<div class="awards">${result.awards.map((a) => `<div class="award"><div class="e">${a.emoji}</div><div class="t">${esc(a.title)}</div><div class="n">${esc(a.names.join(' & '))}</div><div class="d">${esc(a.detail)}</div></div>`).join('')}</div>` : ''}
+      ${result.awards.length ? `<div class="awards">${result.awards.map((a) => `<div class="award"><div class="e">${a.emoji}</div><div class="t">${esc(a.title)}</div><div class="n">${esc(shortNames(a.names))}</div><div class="d">${esc(a.detail)}</div></div>`).join('')}</div>` : ''}
       ${sp.length ? `<h3 style="margin-top:18px">The surprises</h3>${sp.map((s) => `<div class="surprise">${esc(s.text)}</div>`).join('')}` : ''}
     </div>
     <div class="panel"><h3>The card for the chat</h3>
@@ -285,9 +299,9 @@ function gridHtml() {
     return `<div class="grid-wrap"><table class="grid"><thead><tr><th>Never have I ever…</th><th>Have</th><th>Never</th><th>Pass</th></tr></thead><tbody>${result.items.map((it) => `<tr><td>${esc(it.text)}</td><td class="h">${it.haveN}</td><td class="n">${it.neverN}</td><td class="p">${it.passN}</td></tr>`).join('')}</tbody></table></div>`;
   }
   const ps = state.results.players;
-  const sym = { h: '✋', n: '·', p: '–' };
+  const sym = { h: '✋', n: '✕', p: '–' };
   return `<div class="grid-wrap"><table class="grid"><thead><tr><th>Never have I ever…</th>${ps.map((p) => `<th title="${esc(p.nickname)}">${esc(p.nickname)}</th>`).join('')}</tr></thead><tbody>${st.map((s, i) => `<tr><td>${esc(s)}</td>${ps.map((p) => { const a = state.results.answers[p.id][i]; return `<td class="${a}">${sym[a]}</td>`; }).join('')}</tr>`).join('')}</tbody></table></div>
-  <p class="muted small" style="margin-top:8px">✋ I have · · never · – pass</p>`;
+  <p class="muted small" style="margin-top:8px">✋ I have &nbsp; ✕ never &nbsp; – passed</p>`;
 }
 
 load();

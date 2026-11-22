@@ -14,6 +14,9 @@ export function previewText(p, now = Date.now()) {
     return { title, desc: `Revealed · ${p.answered} played. Tap I have / Never / Pass on ${p.count} statements to see who has done what.` };
   }
   const left = p.size - p.answered;
+  if (p.deadline <= now) {
+    return { title, desc: `${p.answered} of ${p.size} have answered · the reveal opens with the next answer. ${p.count} quick taps each, answers sealed until the reveal.` };
+  }
   return {
     title,
     desc: `${p.answered} of ${p.size} have answered · reveal ${left > 0 ? `when ${left} more ${left === 1 ? 'does' : 'do'} or ` : ''}${untilText(p.deadline - now)}. ${p.count} quick taps each, answers sealed until the reveal.`,

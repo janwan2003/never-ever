@@ -50,6 +50,18 @@ async function play(p, pattern) {
     await p.page.click(`[data-a="${pattern[i]}"]`);
   }
 }
+// Answer with the keyboard (H / N / P), the desktop shortcut.
+async function playKeys(p, pattern) {
+  for (let i = 0; i < pattern.length; i++) {
+    await p.page.locator('.play-foot .small', { hasText: `${i + 1} / ${pattern.length}` }).waitFor();
+    await p.page.keyboard.press(pattern[i]);
+  }
+}
+// Phone layouts must never scroll sideways (wide tables scroll inside their own box).
+async function noSideScroll(p, where) {
+  const w = await p.page.evaluate(() => [document.documentElement.scrollWidth, window.innerWidth]);
+  assert.ok(w[0] <= w[1], `${p.label} ${where}: page is ${w[0]}px wide in a ${w[1]}px viewport`);
+}
 async function join(p, url, nick) {
   await p.page.goto(url);
   await p.page.locator('#join').waitFor();
@@ -85,7 +97,7 @@ try {
   await shot(ann, 'play-desktop', false);
   const last = await ann.page.evaluate(async (rid) => (await (await fetch('/api/rounds/' + rid)).json()).round.statements.at(-1), rid);
   assert.equal(last, 'eaten snow');
-  await play(ann, A.Ann);
+  await playKeys(ann, A.Ann);
   await ann.page.locator('text=Your answers are sealed').waitFor();
   assert.match(await ann.page.locator('#h-sub').innerText(), /1 of 4 answered/);
 
@@ -99,6 +111,7 @@ try {
   await ben.page.goto(url);
   await ben.page.locator('#join').waitFor();
   await shot(ben, 'join-phone');
+  await noSideScroll(ben, 'join');
   await ben.page.fill('#nick', 'Ben');
   await ben.page.click('#join button[type=submit]');
   await ben.page.locator('#play').waitFor();
@@ -122,6 +135,7 @@ try {
   await play(cat, A.Cat);
   await cat.page.locator('text=Your answers are sealed').waitFor();
   await shot(cat, 'waiting-phone');
+  await noSideScroll(cat, 'waiting');
 
   step('creator sees Reveal now enabled; Dan answers and the round reveals itself');
   await ann.page.reload();
@@ -146,6 +160,7 @@ try {
   await dan.page.locator('#card-img[src^="blob:"]').waitFor();
   await dan.page.waitForTimeout(300);
   await shot(dan, 'results-phone');
+  await noSideScroll(dan, 'results');
   const awardNames = await dan.page.locator('.award').allInnerTexts();
   assert.ok(awardNames.some((t) => /Most experienced[\s\S]*Ann/i.test(t)), 'Ann most experienced');
   assert.equal(await dan.page.locator('table.grid tbody tr').count(), 11);
@@ -204,6 +219,65 @@ try {
   await ben.page.reload();
   await ben.page.locator('text=Round not found').waitFor();
 
+  step('stress: 80-character statements and 24-character nicknames fit the card and the phone layout');
+  const long = await ann.page.evaluate(async () => {
+    const post = (p, b, t) => fetch('/api' + p, { method: 'POST', headers: { 'content-type': 'application/json', ...(t ? { 'x-token': t } : {}) }, body: JSON.stringify(b) }).then((r) => r.json());
+    const custom = ['sent a five-minute voice note meant for my best friend to the whole family chat',
+      'pretended to know every word of a carol for three verses at the office party'];
+    const r = await post('/rounds', { packId: 'christmas', nickname: 'Bartholomew-Fitzgerald', size: 5, custom, title: 'The extremely long round name for the cousins chat 2026' });
+    const names = ['Alexandrina Montgomery', 'Christopher Wellington', 'Maximiliana Rosenberg', 'Konstantinos Papadakis'];
+    const toks = [r.token];
+    for (const n of names) toks.push((await post(`/rounds/${r.id}/join`, { nickname: n })).token);
+    const pats = ['hnnnnnnnnnhn', 'nhnnnnnnnnnh', 'nnhnnnnnnnnn', 'nnnhnnnnnnnn', 'nnnnhnnnnnnn'];
+    for (let i = 0; i < toks.length; i++) await post(`/rounds/${r.id}/answers`, { answers: pats[i] }, toks[i]);
+    return { id: r.id, token: toks[1], owner: r.token };
+  });
+  const lp = await person('Long', PHONE);
+  await lp.page.goto(BASE + '/r/' + long.id + '#k=' + long.token);
+  await lp.page.click('#skip');
+  await lp.page.locator('#card-img[src^="blob:"]').waitFor();
+  await noSideScroll(lp, 'long results');
+  await shot(lp, 'results-long-phone');
+  const longCard = await lp.page.evaluate(() => {
+    const img = document.querySelector('#card-img');
+    const c = document.createElement('canvas');
+    c.width = img.naturalWidth; c.height = img.naturalHeight;
+    c.getContext('2d').drawImage(img, 0, 0);
+    return c.toDataURL('image/png').split(',')[1];
+  });
+  fs.writeFileSync(path.join(SHOTS, 'card-long.png'), Buffer.from(longCard, 'base64'));
+
+  step('network failure shows a retry, not "not found"');
+  await lp.page.route('**/api/rounds/**', (r) => r.abort());
+  await lp.page.reload();
+  await lp.page.locator('text=Couldn\'t load the round').waitFor();
+  await lp.page.unroute('**/api/rounds/**');
+  await lp.page.click('#retry-load');
+  await lp.page.locator('text=the results').first().waitFor();
+
+  step('home lists your rounds; every same-origin link works');
+  await ann.page.goto(BASE + '/r/' + long.id + '#k=' + long.owner);
+  await ann.page.locator('text=The answers are in').waitFor();
+  await ann.page.goto(BASE + '/');
+  await ann.page.locator('#mine:not(.hidden)').waitFor();
+  const mineRows = await ann.page.locator('#mine-list li').allInnerTexts();
+  assert.equal(mineRows.length, 1, 'the deleted Christmas round dropped off the list: ' + mineRows.join(' | '));
+  assert.match(mineRows[0], /extremely long[\s\S]*Revealed/);
+  await shot(ann, 'landing-mine-desktop', false);
+  const hrefs = new Set();
+  for (const pg of ['/', '/privacy', '/nope', '/r/' + long.id]) {
+    await ann.page.goto(BASE + pg);
+    await ann.page.waitForLoadState('networkidle');
+    for (const h of await ann.page.$$eval('a[href], link[href], img[src], script[src]', (els) => els.map((e) => e.href || e.src))) hrefs.add(h.split('#')[0]);
+  }
+  for (const h of hrefs) {
+    if (!h.startsWith(BASE)) continue;
+    const st = (await fetch(h)).status;
+    assert.ok(st === 200 || h.endsWith('/nope'), `${h} → ${st}`);
+  }
+  console.log(`  checked ${[...hrefs].filter((h) => h.startsWith(BASE)).length} same-origin links`);
+  await ann.page.evaluate(async (l) => fetch('/api/rounds/' + l.id, { method: 'DELETE', headers: { 'x-token': l.owner } }), long);
+
   step('privacy + 404 pages');
   await ann.page.goto(BASE + '/privacy');
   await ann.page.locator('h1', { hasText: 'Privacy' }).waitFor();
@@ -212,8 +286,12 @@ try {
   await landingPhone.page.goto(BASE + '/');
   await landingPhone.page.locator('.pack.featured').waitFor();
   await shot(landingPhone, 'landing-phone');
+  await noSideScroll(landingPhone, 'landing');
+  await landingPhone.page.click('.pack.featured');
+  await landingPhone.page.locator('#setup[open]').waitFor();
+  await shot(landingPhone, 'setup-phone', false);
 
-  const ignore = errors.filter((e) => !/status of (404|409)/.test(e));
+  const ignore = errors.filter((e) => !/status of (404|409)/.test(e) && !/^Long: .*ERR_FAILED/.test(e));
   assert.deepEqual(ignore, [], 'no console errors');
   console.log('E2E PASS', BASE);
 } catch (e) {

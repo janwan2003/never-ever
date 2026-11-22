@@ -9,7 +9,12 @@ export function sentence(s) {
   return `${PREFIX} ${s}.`;
 }
 
-function listNames(names) {
+// "Ben, Cat and 3 more" for award lines, so a big tie stays short.
+export function shortNames(names, max = 3) {
+  return names.length > max ? `${names.slice(0, max - 1).join(', ')} and ${names.length - (max - 1)} more` : listNames(names);
+}
+
+export function listNames(names) {
   if (names.length <= 1) return names.join('');
   if (names.length === 2) return `${names[0]} and ${names[1]}`;
   return `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;

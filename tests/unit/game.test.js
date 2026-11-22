@@ -73,3 +73,16 @@ test('preview text shows live state, never answers', () => {
   assert.match(t.desc, /^4 of 7 have answered · reveal when 3 more do or in 5 h\./);
   assert.match(previewText({ title: 'X', emoji: '🎄', answered: 6, revealed: true, count: 10 }).desc, /^Revealed · 6 played/);
 });
+
+test('shortNames keeps big ties short', async () => {
+  const { shortNames } = await import('../../public/game.js');
+  assert.equal(shortNames(['Ben']), 'Ben');
+  assert.equal(shortNames(['Ben', 'Cat', 'Dan']), 'Ben, Cat and Dan');
+  assert.equal(shortNames(['A', 'B', 'C', 'D', 'E']), 'A, B and 3 more');
+});
+
+test('preview after a missed deadline does not promise a time in the past', () => {
+  const now = Date.UTC(2026, 11, 1, 12);
+  const t = previewText({ title: 'X', emoji: '🎄', size: 5, answered: 0, joined: 2, deadline: now - 60e3, revealed: false, count: 10 }, now);
+  assert.match(t.desc, /^0 of 5 have answered · the reveal opens with the next answer/);
+});

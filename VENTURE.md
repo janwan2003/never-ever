@@ -103,7 +103,7 @@ Searches run 2026-11-21. Sources are search-result summaries, not opened pages, 
 
 ## Status
 
-**Live: https://pb-never-ever.jan-bef.workers.dev** (Worker `pb-never-ever`, version 8a2f144a). Product, support and privacy
+**Live: https://pb-never-ever.jan-bef.workers.dev** (Worker `pb-never-ever`, version 08d75f4c, deployed 2026-11-22 quality session). Product, support and privacy
 page: https://janwan2003.github.io/never-ever/ (GitHub Pages from `docs/`). Search Console: site verified (META) and sitemap
 submitted 2026-11-22 (`scripts/gsc.py`). Brand: **Fess Up** (the phrase "Never have I ever" is used only descriptively).
 
@@ -130,7 +130,32 @@ What exists (one Cloudflare Worker with static assets, vanilla JS, no build step
   security headers (also on `/r/*`); caps (60 players, text lengths); word filter on nicknames, titles and own statements;
   rounds deleted 90 days after creation (on create, no cron). `GET /api/stats` returns aggregate counts only.
 
-Verified 2026-11-22:
+Quality pass 2026-11-22 (second session; all on version 08d75f4c):
+- Design: pack grid reworked (desktop: 3 columns with the featured pack as a 2×2 card showing 3 sample statements and a
+  "Start a Christmas round" call; phone: 2 compact columns, so the landing is ~10% shorter); lock emoji no longer overlaps the
+  waiting heading; waiting-page actions in a tidy 3-column row; answer grid uses ✋ / ✕ / – with tinted "have" cells (the old
+  `·` was near-invisible); tied awards read "Ben, Cat and Dan" (or "A, B and 3 more"); setup sheet keeps its Start button
+  stuck to the bottom; visible keyboard focus rings; balanced hero heading.
+- Bugs fixed: results card could overlap its footer with long statements/nicknames (now measured layout with shrink, ellipsis
+  and drop); "Your rounds on this device" listed deleted rounds that led to "Round not found" (now checks each, drops 404s and
+  shows live status: "Your turn" / "3 of 5 answered" / "Revealed"); a network error showed "Round not found" (now "Couldn't
+  load the round" + Try again); default deadline flipped between tomorrow and in 2 days depending on the hour (now always
+  tomorrow 8 pm); link preview promised a reveal time in the past after a missed deadline; on phones the setup sheet focused
+  the button with a heavy outline (now only desktop focuses the nickname field). Added H / N / P keyboard answering.
+
+Verified 2026-11-22 (quality session):
+- `node --test tests/unit/*.test.js`: 10/10 (added shortNames and past-deadline preview).
+- `BASE=https://pb-never-ever.jan-bef.workers.dev node tests/e2e/run.mjs`: **E2E PASS on production, version 08d75f4c**; also
+  PASS on local `wrangler dev`. New checks on top of the first session's: answering by keyboard, no sideways scroll on every
+  phone screen (join, waiting, results, landing, a stress round), a stress round with two 76–79-character own statements, 5 players
+  with 22-character nicknames and a 55-character title (card saved and inspected), network failure → retry → results, the
+  home round list dropping a deleted round, 9 same-origin links (pages, CSS, JS, icons) returning 200.
+- Screenshots looked at (Chromium, 390 px phone and 1280 px desktop): landing both widths, setup sheet both, join, play,
+  waiting, reveal slide, results both widths, the normal and stress share cards, answer grid.
+- Not checked: real iPhone/Android devices, WhatsApp/iMessage previews and in-app browsers, iOS share sheet with files
+  (still the operator ask in the inbox).
+
+Verified 2026-11-22 (launch session):
 - `node --test tests/unit/*.test.js`: 8/8 (reveal lines, awards, anonymous counts, every pack statement against the lead-ins and
   filter, filter false positives such as Scunthorpe/Essex/cocktail, preview text).
 - `BASE=https://pb-never-ever.jan-bef.workers.dev node tests/e2e/run.mjs`: **E2E PASS on production** (version b18f84a9, the last
@@ -143,11 +168,16 @@ Verified 2026-11-22:
 
 ## Metrics
 
+- 2026-11-22 quality session (`GET /api/stats` on production, after the e2e run deleted its own rounds): 1 round, 2 players,
+  1 revealed; same leftover test round as below. Real users: 0 creators, 0 joiners. Search Console not re-read this session.
+
 - 2026-11-22 (`GET /api/stats` on production): 1 round, 2 players, 1 revealed. All are test data: the first production e2e run
   left one anonymous Work round ("Ann"/"Zed"); later runs delete their rounds. Real users: 0 creators, 0 joiners.
 
 ## Next steps
 
+0. Next quality session: real-device check if the operator has played a round; otherwise test Safari/WebKit (Playwright
+   WebKit is not installed here, only Chromium) and screen-reader labels on the slideshow.
 1. Operator ask (inbox): play one real round in a family or friends chat before Christmas and check the WhatsApp/iMessage preview
    and in-app browser on a real phone.
 2. Per-round OG image (Worker-rendered PNG showing "4 of 7 answered") so the preview carries live state visually, not only in
@@ -170,3 +200,5 @@ None now (rule 4). Later: optional extra packs or a supporter tip once the opera
 - 2026-11-22 builder: sanity-checked evidence (2 searches), named it Fess Up, built and launched the whole product (Worker +
   Durable Object, 12 packs, sealed answers, reveal slideshow, end card, previews), GitHub Pages product page, Search Console
   verified + sitemap. Verified: unit 8/8, Playwright e2e PASS on production (b18f84a9), screenshots at 390 and 1280 px.
+- 2026-11-22 review: kept p4. URL 200, 0 console errors (headless Chromium, 390 px, 2026-11-22 ~03:40 UTC); Search Console 0 impressions 11-01→11-22; `/api/stats` 1 round, 2 players, all the builder's own e2e data, so 0 real. Under 21 days live, so no traction verdict. Christmas pack is the hook.
+- 2026-11-22 builder (quality): fixed 6 bugs (card overflow, stale round list, network error shown as not found, default deadline, past-deadline preview, phone focus) and polished packs grid, waiting page, answer grid, awards. Verified: unit 10/10, Playwright e2e PASS on production 08d75f4c (new stress, overflow, network, link checks), screenshots at 390/1280 px.

@@ -1,5 +1,5 @@
 import { PACKS } from './packs.js';
-import { $, esc, api, store, rememberRound, whenText } from './common.js';
+import { $, esc, api, store, rememberRound, forgetRound, whenText } from './common.js';
 
 function featuredId(now = new Date()) {
   const m = now.getMonth(), d = now.getDate();
@@ -15,8 +15,9 @@ const ordered = [PACKS.find((p) => p.id === feat), ...PACKS.filter((p) => p.id !
 $('#pack-grid').innerHTML = ordered.map((p, i) => `
   <button type="button" class="pack${i === 0 ? ' featured' : ''}" data-id="${p.id}">
     <span class="emoji">${p.emoji}</span>
-    <span>${i === 0 ? `<span class="tag">${p.season ? 'In season' : "This week's pack"}</span><br>` : ''}
-    <span class="name">${esc(p.name)}</span><br><span class="blurb">${esc(p.blurb)}</span></span>
+    ${i === 0 ? `<span class="tag">${p.season ? 'In season' : "This week's pack"}</span>` : ''}
+    <span class="name">${esc(p.name)}</span><span class="blurb">${esc(p.blurb)}</span>
+    ${i === 0 ? `<span class="sample">${p.statements.slice(0, 3).map((s) => `<span>${esc(s)}</span>`).join('')}</span><span class="go">Start a ${esc(p.name)} round →</span>` : ''}
   </button>`).join('');
 
 // Reveal deadline choices, in the creator's local time.
@@ -25,9 +26,11 @@ function deadlines(now = new Date()) {
   const opts = [];
   const tonight = at(0, 21);
   if (tonight - now > 2 * 3600e3) opts.push(tonight);
-  opts.push(at(1, 20), at(2, 20), at(3, 20), at(7, 20));
+  const tomorrow = at(1, 20);
+  opts.push(tomorrow, at(2, 20), at(3, 20), at(7, 20));
   const base = now.getTime();
-  return [base + 3 * 3600e3, ...opts].map((t) => ({ t, label: whenText(t, base) }));
+  // Default: tomorrow evening, so the whole group has a day to play.
+  return [base + 3 * 3600e3, ...opts].map((t) => ({ t, label: whenText(t, base), def: t === tomorrow }));
 }
 
 const dlg = $('#setup');
@@ -42,10 +45,11 @@ function openSetup(p) {
   $('#s-nick').value = store.get('nick') || '';
   $('#s-list').innerHTML = p.statements.map((s) => `<li>${esc(s)}</li>`).join('');
   const ds = deadlines();
-  $('#s-deadline').innerHTML = ds.map((d, i) => `<option value="${d.t}"${i === 2 ? ' selected' : ''}>${esc(d.label.charAt(0).toUpperCase() + d.label.slice(1))}</option>`).join('');
+  $('#s-deadline').innerHTML = ds.map((d, i) => `<option value="${d.t}"${d.def ? ' selected' : ''}>${esc(d.label.charAt(0).toUpperCase() + d.label.slice(1))}</option>`).join('');
   $('#s-err').textContent = '';
   if (typeof dlg.showModal === 'function') dlg.showModal(); else dlg.setAttribute('open', '');
-  setTimeout(() => (!$('#s-nick').value ? $('#s-nick') : $('#s-go')).focus(), 50);
+  // Focus the nickname on desktop only: on phones the keyboard would cover the sheet.
+  if (!$('#s-nick').value && matchMedia('(pointer: fine)').matches) setTimeout(() => $('#s-nick').focus(), 50);
 }
 $('#pack-grid').addEventListener('click', (e) => {
   const b = e.target.closest('.pack');
@@ -82,8 +86,25 @@ $('#setup-form').addEventListener('submit', async (e) => {
 const want = new URLSearchParams(location.search).get('pack');
 if (want && PACKS.some((p) => p.id === want)) openSetup(PACKS.find((p) => p.id === want));
 
-const mine = store.json('rounds', []);
-if (mine.length) {
+// Your recent rounds, with live status. Rounds deleted by their creator (or after 90 days) drop off the list.
+async function showMine() {
+  const mine = store.json('rounds', []).slice(0, 8);
+  if (!mine.length) return;
+  const rows = await Promise.all(mine.map(async (r) => {
+    try {
+      const s = await api('/rounds/' + r.id, { token: store.get('t:' + r.id) });
+      const done = s.members.filter((m) => m.answered).length;
+      const st = s.round.revealed ? (s.me && s.me.answers ? 'Revealed' : 'Revealed · your turn')
+        : s.me && s.me.answers ? `${done} of ${s.round.size} answered` : 'Your turn';
+      return { ...r, title: s.round.title, emoji: s.round.emoji, st, hot: /turn/.test(st) };
+    } catch (e) {
+      if (e.status === 404) { forgetRound(r.id); return null; }
+      return { ...r, st: new Date(r.at).toLocaleDateString([], { day: 'numeric', month: 'short' }) };
+    }
+  }));
+  const live = rows.filter(Boolean);
+  if (!live.length) return;
   $('#mine').classList.remove('hidden');
-  $('#mine-list').innerHTML = mine.map((r) => `<li><span style="font-size:22px">${esc(r.emoji || '🙊')}</span><a href="/r/${esc(r.id)}"><b>${esc(r.title)}</b></a><span class="st">${new Date(r.at).toLocaleDateString([], { day: 'numeric', month: 'short' })}</span></li>`).join('');
+  $('#mine-list').innerHTML = live.map((r) => `<li><span style="font-size:22px">${esc(r.emoji || '🙊')}</span><a href="/r/${esc(r.id)}"><b>${esc(r.title)}</b></a><span class="st${r.hot ? ' hot' : ''}">${esc(r.st)}</span></li>`).join('');
 }
+showMine();

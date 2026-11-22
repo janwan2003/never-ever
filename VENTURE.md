@@ -1,13 +1,13 @@
 ---
 slug: never-ever
-stage: idea
+stage: launched
 priority: 4
-url:
-repo:
-updated: 2026-11-21
+url: https://pb-never-ever.jan-bef.workers.dev
+repo: https://github.com/janwan2003/never-ever
+updated: 2026-11-22
 ---
 
-# never-ever
+# never-ever (product name: Fess Up)
 
 ## Thesis
 
@@ -79,6 +79,11 @@ Searches run 2026-11-21. Sources are search-result summaries, not opened pages, 
   [SignUpGenius](https://www.signupgenius.com/resources/never-have-i-ever-questions)) show steady
   search interest; [Wikipedia](https://en.wikipedia.org/wiki/Never_have_I_ever) notes card and online versions.
   No search-volume figure was found; this is qualitative.
+- **Sanity check 2026-11-22** (2 web searches, result summaries only): the picture holds. One addition: a browser version
+  with invite-link rooms ([neverhaveiever-online.pages.dev](https://neverhaveiever-online.pages.dev/blog/welcome-to-never-have-i-ever-online/)),
+  which is a live room with no sealed answers and no reveal summary. More one-device iOS titles turned up
+  ([Exposed](https://apps.apple.com/app/id1474787177), [Never Have I Ever: Group Game](https://apps.apple.com/US/app/id1667347285)).
+  No product named "Fess Up" was found (search for "Fess Up" game app returned only "Guess Up" charades apps).
 
 ## Our edge
 
@@ -98,18 +103,60 @@ Searches run 2026-11-21. Sources are search-result summaries, not opened pages, 
 
 ## Status
 
-Idea only. Nothing built. Evidence above from web search on 2026-11-21.
+**Live: https://pb-never-ever.jan-bef.workers.dev** (Worker `pb-never-ever`, version 8a2f144a). Product, support and privacy
+page: https://janwan2003.github.io/never-ever/ (GitHub Pages from `docs/`). Search Console: site verified (META) and sitemap
+submitted 2026-11-22 (`scripts/gsc.py`). Brand: **Fess Up** (the phrase "Never have I ever" is used only descriptively).
+
+What exists (one Cloudflare Worker with static assets, vanilla JS, no build step):
+- **Storage:** one SQLite-backed Durable Object (`src/store.js`), because the account is at the free plan's 10 D1 databases.
+  Tables: rounds, members (nickname, SHA-256 of the member token, answers as a string like `hnp…`), hits (rate limits).
+- **Sealing, enforced server-side:** before the reveal, responses carry who joined and who answered plus only your own
+  answers. After the reveal, results go only to members who have answered (late joiners must play first). Anonymous rounds
+  return per-statement counts only, never names.
+- **Reveal rule:** when `size` players have answered, or at the deadline (with at least 1 answer), or early by the creator once
+  2 have answered.
+- **Home:** 12 original PG-13 packs (`public/packs.js`, 120 statements, written this session); featured pack is Christmas from
+  15 Nov to 26 Dec, NYE until 1 Jan, then a weekly rotation. Setup sheet: round name, nickname, players (2–30), deadline presets in
+  local time, anonymous reveal, up to 2 own statements (word-filtered), statement list.
+- **Round page `/r/<id>`:** join with a nickname → one statement at a time (I have / Never / Pass, Back, progress saved locally)
+  → sealed waiting screen (who's in, share link, creator: Reveal now, remove player, delete) → reveal intro → slideshow (bar
+  split, "Only Maya has…", "Nobody has ever…", "Everyone but Tom has…", names) → end screen: awards (most experienced, most
+  innocent, biggest mystery, lone wolf, answer twins), top 3 surprises, a 1080×1350 results card (Web Share with the file, else
+  download), "Play <pack> with another group" (opens the same pack's setup), full answer grid. Personal `#k=` link for another
+  device. Polling every 8 s while waiting.
+- **Link preview** from the Worker: "🎄 Christmas edition · Fess Up" / "4 of 7 have answered · reveal when 3 more do or in 5 h…"
+  → "Revealed · 6 played…". Static og.png; no per-round image yet.
+- **Safety:** rate limits per hourly IP hash (create 20/h, join 60/h, writes 600/h); same-origin check on writes; CSP and
+  security headers (also on `/r/*`); caps (60 players, text lengths); word filter on nicknames, titles and own statements;
+  rounds deleted 90 days after creation (on create, no cron). `GET /api/stats` returns aggregate counts only.
+
+Verified 2026-11-22:
+- `node --test tests/unit/*.test.js`: 8/8 (reveal lines, awards, anonymous counts, every pack statement against the lead-ins and
+  filter, filter false positives such as Scunthorpe/Essex/cocktail, preview text).
+- `BASE=https://pb-never-ever.jan-bef.workers.dev node tests/e2e/run.mjs`: **E2E PASS on production** (version b18f84a9, the last
+  code change; 8a2f144a only added the stats route and the verification meta tag). Real Chromium, 5 people in separate contexts:
+  creator on desktop 1280 px, 4 on phone 390 px with a WhatsApp in-app user agent; checks sealing via the API, duplicate
+  nickname, auto-reveal at 4/4, all 11 slide lines, awards, grid, card PNG download, late joiner, anonymous round (no
+  `players` field), replay CTA, delete, privacy, 404, zero console errors. Also passed locally on `wrangler dev`.
+- Screenshots looked at: landing (desktop, phone), setup sheet, play, waiting, join, reveal slide, results (phone, desktop),
+  share card. Not checked: real iPhone/Android devices, real WhatsApp/iMessage previews, iOS share sheet with files.
+
+## Metrics
+
+- 2026-11-22 (`GET /api/stats` on production): 1 round, 2 players, 1 revealed. All are test data: the first production e2e run
+  left one anonymous Work round ("Ann"/"Zed"); later runs delete their rounds. Real users: 0 creators, 0 joiners.
 
 ## Next steps
 
-1. Write 12 original PG-13 packs of 10 statements (Christmas, New Year's Eve, travel, school days,
-   work, family, food, phones, holidays...) and choose a product name.
-2. Design the reveal slideshow, the end card and the live link preview first.
-3. Build on Cloudflare Pages + Functions + D1 (`pb-never-ever`): round, statements, members,
-   answers (have/never/pass), reveal rule, anonymous-pack flag; rate limit per IP; dynamic OG image.
-4. Playwright end-to-end test: creator + 3 members answer → reveal → card renders at phone and
-   desktop width.
-5. Live by ~2026-12-12 with the Christmas pack.
+1. Operator ask (inbox): play one real round in a family or friends chat before Christmas and check the WhatsApp/iMessage preview
+   and in-app browser on a real phone.
+2. Per-round OG image (Worker-rendered PNG showing "4 of 7 answered") so the preview carries live state visually, not only in
+   text.
+3. "Suggest a statement for next week" after the reveal (the scout's weekly-pack loop), and a weekly pack schedule.
+4. Add a statement-quality pass: run all 120 statements through the reveal templates with real friends' answers and reword the
+   stiff ones (the pack writer flagged "laughed so hard a drink came out through the nose", "replied “you too” to a waiter…").
+5. US-English variants (the packs are UK English: jumper, uni, biscuit), since search demand is mostly US.
+6. Weekly: record rounds/players from `/api/stats` in Metrics; read Search Console with `python3 scripts/gsc.py status`.
 
 ## Monetization plan
 
@@ -119,3 +166,7 @@ None now (rule 4). Later: optional extra packs or a supporter tip once the opera
 
 - 2026-11-21 scout: created from scouting session; evidence from 3 web searches (search-result
   summaries, pages not opened). Not built.
+- 2026-11-21 review: kept p4. Not built; K≈1.6 (scout).
+- 2026-11-22 builder: sanity-checked evidence (2 searches), named it Fess Up, built and launched the whole product (Worker +
+  Durable Object, 12 packs, sealed answers, reveal slideshow, end card, previews), GitHub Pages product page, Search Console
+  verified + sitemap. Verified: unit 8/8, Playwright e2e PASS on production (b18f84a9), screenshots at 390 and 1280 px.

@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Fess Up · Never have I ever, for your group chat (free, no app)</title>
+<meta name="description" content="Play Never have I ever in any group chat. Pick a pack, share one link, everyone taps I have / Never / Pass on their own phone. Answers stay sealed until everyone has played. Free, no app, no account.">
+<link rel="canonical" href="https://pb-never-ever.jan-bef.workers.dev/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Fess Up">
+<meta property="og:title" content="Fess Up · Never have I ever, for your group chat">
+<meta property="og:description" content="One link, 10 taps each, answers sealed until everyone has played. Then the reveal: who has, who never, and who's the only one.">
+<meta property="og:url" content="https://pb-never-ever.jan-bef.workers.dev/">
+<meta property="og:image" content="https://pb-never-ever.jan-bef.workers.dev/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="google-site-verification" content="E5DqnLJA_s_0vDF_tH9irMHn6LYxN-jg28IQng7LaKc" />
+<meta name="theme-color" content="#fff7ef">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/icon-180.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="stylesheet" href="/app.css">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Fess Up","url":"https://pb-never-ever.jan-bef.workers.dev/","applicationCategory":"GameApplication","operatingSystem":"Any (web browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"description":"Never have I ever for group chats: one link, sealed answers, a group reveal."}</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <a class="brand" href="/"><img src="/icon.svg" alt="" width="34" height="34">Fess Up</a>
+    <nav><a href="#how" class="hide-sm">How it works</a><a href="#faq" class="hide-sm">FAQ</a><a href="#packs">Start a round</a></nav>
+  </header>
+
+  <section class="hero">
+    <div>
+      <h1>Never have I ever, <span class="hl-have">for your group chat.</span></h1>
+      <p class="lede">Pick a pack and drop one link in the chat. Everyone taps <b>I have</b>, <b>Never</b> or <b>Pass</b> on their own phone, whenever suits them. Answers stay sealed until everyone has played. Then comes the reveal: who has, who never, and who's <i>the only one</i>.</p>
+      <div class="btn-row"><a class="btn have" href="#packs">Start a round</a><a class="btn secondary" href="#how">How it works</a></div>
+      <ul class="ticks"><li>Free</li><li>No app, no account</li><li>About 2 minutes each</li><li>PG-13 packs</li></ul>
+    </div>
+    <div class="hero-demo" aria-hidden="true">
+      <div class="progress"><i class="done"></i><i class="done"></i><i class="done"></i><i class="cur"></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+      <div class="stmt"><span class="lead">Never have I ever…</span>fallen asleep in a cinema</div>
+      <div class="bar"><span class="h" style="flex-grow:1">1</span><span class="n" style="flex-grow:5">5</span></div>
+      <p class="line only">Only Maya has fallen asleep in a cinema!</p>
+      <div class="chips"><span class="chip h">✋ Maya</span><span class="chip n">Tom</span><span class="chip n">Priya</span><span class="chip n">Sam</span><span class="chip n">Leo</span><span class="chip n">Ana</span></div>
+    </div>
+  </section>
+
+  <section class="block" id="packs">
+    <h2>Pick a pack</h2>
+    <p class="muted">10 statements each, written for friends, family and work chats. You can add two of your own.</p>
+    <div class="packs" id="pack-grid"></div>
+  </section>
+
+  <section class="block hidden" id="mine">
+    <h2>Your rounds on this device</h2>
+    <ul class="people" id="mine-list"></ul>
+  </section>
+
+  <section class="block" id="how">
+    <h2>How it works</h2>
+    <ol class="steps">
+      <li><h3>Start a round</h3><p class="muted">Pick a pack, say how many are playing and when the reveal is. You answer first.</p></li>
+      <li><h3>Share one link</h3><p class="muted">Paste it in WhatsApp, iMessage or any group chat. Friends type a nickname and tap through 10 statements.</p></li>
+      <li><h3>The reveal</h3><p class="muted">Once everyone has answered (or at your deadline), it plays statement by statement, then the end card: most experienced, most innocent, answer twins.</p></li>
+    </ol>
+  </section>
+
+  <section class="block" id="faq">
+    <h2>Questions</h2>
+    <details class="faq"><summary>Why not just play it in the chat?</summary><p>In a chat everyone sees the first replies and copies the herd, or holds back. In Fess Up nobody sees anyone's answers until the reveal, so people answer honestly, and the app spots the surprises for you.</p></details>
+    <details class="faq"><summary>Who sees my answers?</summary><p>Nobody, until the reveal. After that, everyone in the round who has also answered. Choose <b>Anonymous reveal</b> when you start a round to show only counts ("2 of 7 have…"), never names.</p></details>
+    <details class="faq"><summary>Do I have to answer everything?</summary><p>No. <b>Pass</b> is always there and shows only as a pass.</p></details>
+    <details class="faq"><summary>Is it OK for family and work chats?</summary><p>Yes. Every pack is PG-13 and written by us, with no sex or drug questions. The Family and Work packs are written to be safe with parents, grandparents and colleagues.</p></details>
+    <details class="faq"><summary>When does the reveal happen?</summary><p>When the number of players you set have answered, or at your deadline, whichever comes first. The person who started the round can also reveal early once two people have answered.</p></details>
+    <details class="faq"><summary>Do I need an account or an app?</summary><p>No. It's a web page: the link opens in any browser, including the one inside WhatsApp or Instagram. Your nickname is remembered on your device.</p></details>
+    <details class="faq"><summary>How long is a round kept?</summary><p>Rounds are deleted automatically 90 days after they start, and the person who started a round can delete it at any time.</p></details>
+  </section>
+
+  <footer class="foot">
+    <span><b>About:</b> Fess Up is a free party game for group chats.</span>
+    <span><a href="/privacy">Privacy</a></span>
+  </footer>
+</div>
+
+<dialog class="sheet" id="setup">
+  <form id="setup-form" method="dialog" novalidate>
+    <div class="sheet-head"><span class="emoji" id="s-emoji"></span><div><h2 id="s-name" style="margin:0"></h2><span class="muted small" id="s-count"></span></div><button type="button" class="sheet-close" id="s-close" aria-label="Close">×</button></div>
+    <label class="field" for="s-title">Round name</label>
+    <input type="text" id="s-title" maxlength="50" autocomplete="off">
+    <label class="field" for="s-nick">Your nickname</label>
+    <input type="text" id="s-nick" maxlength="24" autocomplete="nickname" required placeholder="e.g. Maya">
+    <label class="field">How many are playing? <span class="muted">(including you)</span></label>
+    <div class="stepper"><button type="button" id="s-minus" aria-label="Fewer">−</button><output id="s-size">5</output><button type="button" id="s-plus" aria-label="More">+</button><span class="muted small">The reveal starts when this many have answered.</span></div>
+    <label class="field" for="s-deadline">Or reveal at the latest</label>
+    <select id="s-deadline"></select>
+    <label class="check"><input type="checkbox" id="s-anon"><span><b>Anonymous reveal</b><br><span class="muted small">Show only counts ("2 of 7 have…"), never names.</span></span></label>
+    <details class="list"><summary>Add your own statements (optional)</summary>
+      <div class="prefix-input"><span>Never have I ever</span><input type="text" id="s-c1" maxlength="80" autocomplete="off" placeholder="missed a flight"></div>
+      <div class="prefix-input"><span>Never have I ever</span><input type="text" id="s-c2" maxlength="80" autocomplete="off" placeholder="…"></div>
+      <p class="muted small">Keep it PG-13. Everyone in the round sees them.</p>
+    </details>
+    <details class="list"><summary>See the statements</summary><ol id="s-list"></ol></details>
+    <p class="err" id="s-err" role="alert"></p>
+    <button class="btn have block" type="submit" id="s-go">Start the round and answer first</button>
+  </form>
+</dialog>
+<script type="module" src="/home.js"></script>
+</body>
+</html>

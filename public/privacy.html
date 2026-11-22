@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Privacy · Fess Up</title>
+<meta name="description" content="What Fess Up stores, for how long, and who can see it.">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/app.css">
+</head>
+<body>
+<div class="wrap legal">
+  <header class="top"><a class="brand" href="/"><img src="/icon.svg" alt="" width="34" height="34">Fess Up</a></header>
+  <h1>Privacy</h1>
+  <p class="muted">Last updated 22 November 2026.</p>
+  <p>Fess Up is a free party game for group chats. It has no accounts, no ads and no tracking.</p>
+  <h2>What we store</h2>
+  <ul>
+    <li><b>For each round:</b> its name, pack, any statements the creator added, the number of players, the reveal time and when it was revealed.</li>
+    <li><b>For each player:</b> the nickname you type, your answers (I have, Never or Pass) and when you joined and answered.</li>
+    <li><b>A secret key</b> that lets your device act as you in that round. We keep only a one-way hash of it; the key itself stays in your browser's local storage.</li>
+    <li><b>Rate limiting:</b> a one-way hash of your IP address combined with the current hour, kept for up to an hour, to stop one visitor overloading the service. We do not store your IP address.</li>
+  </ul>
+  <h2>Who can see it</h2>
+  <p>Before the reveal, other players see only your nickname and whether you have answered. After the reveal, everyone in the round who has also answered sees your answers next to your nickname. In an <b>anonymous</b> round, they see only counts, never which answer was yours. The person who started a round can remove players and delete the round.</p>
+  <p>Link previews (in WhatsApp, iMessage and similar) show the round name, how many have answered and when the reveal is. They never show anyone's answers.</p>
+  <h2>How long</h2>
+  <p>Rounds and everything in them are deleted automatically 90 days after they start. You can leave a round (which deletes your answers) at any time, and the person who started a round can delete it at any time.</p>
+  <h2>Cookies and analytics</h2>
+  <p>We use no cookies, no analytics scripts and no third-party trackers. Your browser's local storage keeps your nickname, your keys for the rounds you joined and which reveals you have seen. Clearing your site data removes them.</p>
+  <h2>Where it runs</h2>
+  <p>Fess Up runs on Cloudflare Workers, and Cloudflare processes requests on our behalf. We do not sell or share data with anyone else.</p>
+  <h2>Children</h2>
+  <p>Fess Up is meant for players aged 13 and over. Its packs are PG-13.</p>
+  <h2>Contact</h2>
+  <p>Questions or removal requests: open an issue at <a href="https://github.com/janwan2003/never-ever/issues">github.com/janwan2003/never-ever</a>.</p>
+  <footer class="foot"><span><b>About:</b> Fess Up is a free party game for group chats.</span><span><a href="/">Home</a></span></footer>
+</div>
+</body>
+</html>

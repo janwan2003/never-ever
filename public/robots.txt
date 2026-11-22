@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+Disallow: /r/
+Sitemap: https://pb-never-ever.jan-bef.workers.dev/sitemap.xml
